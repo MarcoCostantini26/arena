@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Task 2: Dynamic Environment (Traffic Zone)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html,body{margin:0;height:100%;background:#222;font-family:Arial,Helvetica,sans-serif}
+  #stage{position:relative;width:100vw;height:100vh;background:#ff0000}
+  #stage:fullscreen{width:100vw;height:100vh}
+  svg{display:block;width:100%;height:100%}
+  
+  #ui{position:absolute;top:12px;left:12px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;z-index:5}
+  #ui button{font:bold 16px Arial;padding:12px 20px;border:2px solid #222;border-radius:8px;background:#fff;color:#000;
+             cursor:pointer;box-shadow:0 2px 5px #0006; transition: 0.2s;}
+  #ui button:hover{background:#eee; transform: scale(1.05);}
+  #ui label{background:#fffe;border-radius:8px;padding:8px 12px;font-size:13px;display:flex;gap:6px;align-items:center;color:#000}
+  #ui input[type=number]{width:62px}
+  
+  #stage:fullscreen #btnFull, 
+  #stage:fullscreen label,
+  #stage:-webkit-full-screen #btnFull,
+  #stage:-webkit-full-screen label { 
+      display: none !important; 
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="ui">
+    <button id="btnFull">Schermo intero</button>
+    <button id="btnTraffic" style="background:#00FFFF; border-color:#000;">Attiva Traffico (Ciano)</button>
+    <label>Larghezza strada (mm) <input type="number" id="roadmm" value="60" min="20" step="5"></label>
+  </div>
+  <svg id="svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg>
+</div>
+
+<script>
+const COL = {
+  redWall   : '#ff0000', 
+  blueWall  : '#0000ff', 
+  road      : '#00ff00', 
+  outline   : '#000000', 
+  fork      : '#ffff00', 
+  startLine : '#ff00ff',
+  traffic   : '#00ffff'
+};
+
+const R = 76;        
+const BORDER = 14;   
+const VB = {x:0, y:0, w:1247, h:737};
+const $ = id => document.getElementById(id);
+let trafficActive = false;
+
+const F = [120, 390];
+const M = [1020, 120];
+const START = [615, 610];
+
+const MAIN = [[1020, 120], [1140, 120], [1140, 610], [120, 610], [120, 390]];
+const SHORTCUT = [[120, 390], [120, 120], [1020, 120]];
+const LONG_WAY = [[120, 390], [270, 390], [270, 260], [420, 260], [420, 430], [570, 430], [570, 260], [720, 260], [720, 430], [870, 430], [870, 260], [1020, 260], [1020, 120]];
+
+const pts = poly => poly.map(p=>p.join(',')).join(' ');
+
+function drawSim(){
+  let s = '';
+  s += `<rect x="0" y="0" width="${VB.w}" height="${VB.h}" fill="${COL.redWall}"/>`;
+
+  const lowerBlueIsland = [[120, 390], [270, 390], [270, 260], [420, 260], [420, 430], [570, 430], [570, 260], [720, 260], [720, 430], [870, 430], [870, 260], [1020, 260], [1020, 120], [1140, 120], [1140, 610], [120, 610]];
+  s += `<polygon points="${pts(lowerBlueIsland)}" fill="${COL.blueWall}"/>`;
+
+  const upperRedBase = [[120, 390], [120, 120], [1020, 120], [1020, 260], [870, 260], [870, 430], [720, 430], [720, 260], [570, 260], [570, 430], [420, 430], [420, 260], [270, 260], [270, 390]];
+  s += `<polygon points="${pts(upperRedBase)}" fill="${COL.redWall}"/>`;
+  
+  s += `<polygon points="120,310 120,120 1020,120 960,195 195,195 195,310" fill="${COL.blueWall}"/>`;
+  
+  const roads = [MAIN, SHORTCUT, LONG_WAY];
+  roads.forEach(p => {
+    s += `<polyline points="${pts(p)}" fill="none" stroke="${COL.outline}" stroke-width="${R}" stroke-linejoin="miter" stroke-linecap="square"/>`;
+  });
+  roads.forEach(p => {
+    s += `<polyline points="${pts(p)}" fill="none" stroke="${COL.road}" stroke-width="${R - 2*BORDER}" stroke-linejoin="miter" stroke-linecap="square"/>`;
+  });
+
+  const disp = trafficActive ? 'block' : 'none';
+  s += `<g id="traffic-layer" style="display: ${disp};">`;
+  s += `<line x1="230" y1="120" x2="250" y2="120" stroke="${COL.outline}" stroke-width="${R - 2*BORDER}" stroke-linecap="butt"/>`;
+  s += `<line x1="250" y1="120" x2="900" y2="120" stroke="${COL.traffic}" stroke-width="${R - 2*BORDER}" stroke-linecap="butt"/>`;
+  s += `<line x1="900" y1="120" x2="920" y2="120" stroke="${COL.outline}" stroke-width="${R - 2*BORDER}" stroke-linecap="butt"/>`;
+  s += `</g>`;
+
+  // FORK
+  s += `<rect x="${F[0] - R/2 - 10}" y="${F[1] - 60}" width="${R + 20}" height="120" fill="${COL.outline}"/>`;
+  s += `<rect x="${F[0] - R/2 + 2}" y="${F[1] - 50}" width="${R - 4}" height="100" fill="${COL.fork}"/>`;
+
+  // MERGE
+  s += `<rect x="${M[0] - 55}" y="${M[1] - 55}" width="110" height="110" fill="${COL.outline}"/>`;
+  s += `<rect x="${M[0] - 45}" y="${M[1] - 45}" width="90" height="90" fill="${COL.fork}"/>`;
+
+  // START / FINISH
+  s += `<rect x="${START[0] - 60}" y="${START[1] - R/2 - 10}" width="120" height="${R + 20}" fill="${COL.outline}"/>`;
+  s += `<rect x="${START[0] - 50}" y="${START[1] - R/2 + 2}" width="100" height="${R - 4}" fill="${COL.startLine}"/>`;
+
+  return s;
+}
+
+function render(){
+  const svg = $('svg');
+  svg.setAttribute('viewBox', `${VB.x} ${VB.y} ${VB.w} ${VB.h}`);
+  svg.innerHTML = drawSim();
+}
+
+$('btnFull').onclick  = ()=>{
+  const st = $('stage');
+  if(document.fullscreenElement) document.exitFullscreen(); else st.requestFullscreen && st.requestFullscreen();
+};
+
+$('btnTraffic').onclick = function() {
+    trafficActive = !trafficActive;
+    
+    if(trafficActive) {
+        this.textContent = 'Rimuovi Traffico (Torna Verde)';
+        this.style.background = '#eeeeee';
+        this.style.color = '#ff0000';
+    } else {
+        this.textContent = 'Attiva Traffico (Ciano)';
+        this.style.background = '#00FFFF';
+        this.style.color = '#000000';
+    }
+    
+    render();
+};
+
+$('roadmm').addEventListener('input', render);
+render();
+</script>
+</body>
+</html>
