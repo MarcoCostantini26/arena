@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Task 2: Dynamic Environment (Traffic Zone)</title>
+<title>Task 1: Dynamic Environment</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   html,body{margin:0;height:100%;background:#222;font-family:Arial,Helvetica,sans-serif}
@@ -28,9 +28,9 @@
 <body>
 <div id="stage">
   <div id="ui">
-    <button id="btnFull">Schermo intero</button>
-    <button id="btnTraffic" style="background:#00FFFF; border-color:#000;">Attiva Traffico (Ciano)</button>
-    <label>Larghezza strada (mm) <input type="number" id="roadmm" value="60" min="20" step="5"></label>
+    <button id="btnFull">fullscreen</button>
+    <button id="btnTraffic" style="background:#00FFFF; border-color:#000;">dynamic</button>
+    <label>road <input type="number" id="roadmm" value="60" min="20" step="5"></label>
   </div>
   <svg id="svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg>
 </div>
@@ -43,7 +43,7 @@ const COL = {
   outline   : '#000000', 
   fork      : '#ffff00', 
   startLine : '#ff00ff',
-  traffic   : '#00ffff'
+  traffic   : '#ffffff'
 };
 
 const R = 76;        
@@ -123,7 +123,7 @@ $('btnTraffic').onclick = function() {
         this.style.background = '#eeeeee';
         this.style.color = '#ff0000';
     } else {
-        this.textContent = 'Attiva Traffico (Ciano)';
+        this.textContent = 'Attiva Traffico';
         this.style.background = '#00FFFF';
         this.style.color = '#000000';
     }
