@@ -12,28 +12,19 @@
             cursor: pointer; background: #333; color: white; 
             border: 3px solid white; z-index: 10; border-radius: 10px; 
             font-family: sans-serif; box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
-            transition: all 0.3s ease; /* Effetto fluido */
+            transition: all 0.3s ease;
             opacity: 0.8;
         }
         .btn:hover { opacity: 1; }
         #btn-fs { left: 20px; }
         #btn-traffic { right: 20px; }
 
-        /* ========================================== */
-        /* STILI QUANDO IL BROWSER E' IN FULL SCREEN  */
-        /* ========================================== */
+        /* Full Screen: i bottoni diventano discreti per non ingannare il robot */
         :fullscreen .btn {
-            padding: 5px 10px; 
-            font-size: 12px; 
-            top: 10px;
-            border-width: 1px;
-            opacity: 0.2; /* Diventano leggerissimi per non ingannare il robot */
+            padding: 5px 10px; font-size: 12px; top: 10px; border-width: 1px; opacity: 0.2;
         }
-        :fullscreen .btn:hover {
-            opacity: 1; /* Tornano visibili se ci passi sopra col mouse */
-        }
+        :fullscreen .btn:hover { opacity: 1; }
         
-        /* Prefissi per compatibilità con Chrome/Edge/Safari */
         :-webkit-full-screen .btn {
             padding: 5px 10px; font-size: 12px; top: 10px; border-width: 1px; opacity: 0.2;
         }
@@ -54,40 +45,42 @@
         <!-- Isola Centrale (Muro Interno Principale BLUE) -->
         <rect x="300" y="200" width="1300" height="650" fill="#0000FF" />
         
-        <!-- Isola Interna della Serpentina (Muro RED per correggere le curve interne) -->
+        <!-- Isola Interna della Serpentina (Muro RED) -->
         <rect x="700" y="200" width="500" height="450" fill="#FF0000" />
 
         <!-- ========================================== -->
-        <!-- BORDATURE NERE DI QUARANTENA (Largo 180px) -->
+        <!-- BORDATURE NERE GLOBALI DI QUARANTENA       -->
         <!-- ========================================== -->
-        
-        <!-- Main Loop (Il giro esterno) -->
         <path d="M 300 850 L 300 200 L 1600 200 L 1600 850 Z" stroke="#000000" stroke-width="180" fill="none" stroke-linejoin="miter" />
-        <!-- Serpentina (Deviazione a U) -->
         <path d="M 700 200 L 700 650 L 1200 650 L 1200 200" stroke="#000000" stroke-width="180" fill="none" stroke-linejoin="miter" />
 
         <!-- ========================================== -->
-        <!-- CORSIA VERDE DI MARCIA (Larga 100px)       -->
+        <!-- CORSIA VERDE DI MARCIA                     -->
         <!-- ========================================== -->
-        
-        <!-- Main Loop -->
         <path d="M 300 850 L 300 200 L 1600 200 L 1600 850 Z" stroke="#00FF00" stroke-width="100" fill="none" stroke-linejoin="miter" />
-        <!-- Serpentina -->
         <path d="M 700 200 L 700 650 L 1200 650 L 1200 200" stroke="#00FF00" stroke-width="100" fill="none" stroke-linejoin="miter" />
 
         <!-- ========================================== -->
-        <!-- MARKER SEMANTICI                           -->
+        <!-- MARKER SEMANTICI A DOPPIO STRATO           -->
         <!-- ========================================== -->
 
-        <!-- Marker Gialli (Fork a sx, Merge a dx) -->
-        <line x1="700" y1="120" x2="700" y2="280" stroke="#FFFF00" stroke-width="120" />
-        <line x1="1200" y1="120" x2="1200" y2="280" stroke="#FFFF00" stroke-width="120" />
+        <!-- Fork (Giallo Sinistro) -->
+        <rect x="610" y="110" width="180" height="180" fill="#000000" /> <!-- Base Nera -->
+        <rect x="630" y="130" width="140" height="140" fill="#FFFF00" /> <!-- Cuore Giallo -->
 
-        <!-- Traguardo Magenta in basso -->
-        <line x1="950" y1="770" x2="950" y2="930" stroke="#FF00FF" stroke-width="120" />
+        <!-- Merge (Giallo Destro) -->
+        <rect x="1110" y="110" width="180" height="180" fill="#000000" />
+        <rect x="1130" y="130" width="140" height="140" fill="#FFFF00" />
 
-        <!-- Traffico Bianco (Sulla scorciatoia in alto, tra i due bivi) -->
-        <line id="traffic-zone" x1="800" y1="200" x2="1100" y2="200" stroke="#FFFFFF" stroke-width="100" visibility="hidden" />
+        <!-- Traguardo (Magenta in basso) -->
+        <rect x="860" y="760" width="180" height="180" fill="#000000" />
+        <rect x="880" y="780" width="140" height="140" fill="#FF00FF" />
+
+        <!-- Traffico Bianco (Sulla scorciatoia) -->
+        <g id="traffic-zone" visibility="hidden">
+            <rect x="790" y="110" width="320" height="180" fill="#000000" />
+            <rect x="810" y="130" width="280" height="140" fill="#FFFFFF" />
+        </g>
     </svg>
 
     <script>
