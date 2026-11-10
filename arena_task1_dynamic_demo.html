@@ -19,16 +19,10 @@
         #btn-fs { left: 20px; }
         #btn-traffic { right: 20px; }
 
-        /* Full Screen: i bottoni diventano discreti per non ingannare il robot */
-        :fullscreen .btn {
+        :fullscreen .btn, :-webkit-full-screen .btn {
             padding: 5px 10px; font-size: 12px; top: 10px; border-width: 1px; opacity: 0.2;
         }
-        :fullscreen .btn:hover { opacity: 1; }
-        
-        :-webkit-full-screen .btn {
-            padding: 5px 10px; font-size: 12px; top: 10px; border-width: 1px; opacity: 0.2;
-        }
-        :-webkit-full-screen .btn:hover { opacity: 1; }
+        :fullscreen .btn:hover, :-webkit-full-screen .btn:hover { opacity: 1; }
     </style>
 </head>
 <body>
@@ -36,47 +30,41 @@
     <button id="btn-fs" class="btn" onclick="toggleFullScreen()">FULL SCREEN</button>
     <button id="btn-traffic" class="btn" onclick="toggleTraffic()">ATTIVA TRAFFICO (BIANCO)</button>
     
-    <!-- Pista in scala 1920x1080 (Full HD) -->
     <svg viewBox="0 0 1920 1080" width="100%" height="100%">
         
-        <!-- Sfondo (Muro Esterno Globale RED) -->
+        <!-- Sfondo Globale (RED) -->
         <rect width="1920" height="1080" fill="#FF0000" />
         
-        <!-- Isola Centrale (Muro Interno Principale BLUE) -->
+        <!-- Isola Centrale (BLUE) -->
         <rect x="300" y="200" width="1300" height="650" fill="#0000FF" />
         
-        <!-- Isola Interna della Serpentina (Muro RED) -->
+        <!-- Isola Interna della Serpentina (RED) -->
         <rect x="700" y="200" width="500" height="450" fill="#FF0000" />
 
         <!-- ========================================== -->
-        <!-- BORDATURE NERE GLOBALI DI QUARANTENA       -->
+        <!-- STRISCIA BLU CONTINUA (tranne l'inizio)    -->
         <!-- ========================================== -->
+        <rect x="820" y="200" width="380" height="150" fill="#0000FF" />
+
+        <!-- BORDATURE NERE -->
         <path d="M 300 850 L 300 200 L 1600 200 L 1600 850 Z" stroke="#000000" stroke-width="180" fill="none" stroke-linejoin="miter" />
         <path d="M 700 200 L 700 650 L 1200 650 L 1200 200" stroke="#000000" stroke-width="180" fill="none" stroke-linejoin="miter" />
 
-        <!-- ========================================== -->
-        <!-- CORSIA VERDE DI MARCIA                     -->
-        <!-- ========================================== -->
+        <!-- CORSIA VERDE -->
         <path d="M 300 850 L 300 200 L 1600 200 L 1600 850 Z" stroke="#00FF00" stroke-width="100" fill="none" stroke-linejoin="miter" />
         <path d="M 700 200 L 700 650 L 1200 650 L 1200 200" stroke="#00FF00" stroke-width="100" fill="none" stroke-linejoin="miter" />
 
-        <!-- ========================================== -->
-        <!-- MARKER SEMANTICI A DOPPIO STRATO           -->
-        <!-- ========================================== -->
+        <!-- MARKER SEMANTICI DOPPIO STRATO -->
+        <rect x="610" y="110" width="180" height="180" fill="#000000" /> 
+        <rect x="630" y="130" width="140" height="140" fill="#FFFF00" />
 
-        <!-- Fork (Giallo Sinistro) -->
-        <rect x="610" y="110" width="180" height="180" fill="#000000" /> <!-- Base Nera -->
-        <rect x="630" y="130" width="140" height="140" fill="#FFFF00" /> <!-- Cuore Giallo -->
-
-        <!-- Merge (Giallo Destro) -->
         <rect x="1110" y="110" width="180" height="180" fill="#000000" />
         <rect x="1130" y="130" width="140" height="140" fill="#FFFF00" />
 
-        <!-- Traguardo (Magenta in basso) -->
         <rect x="860" y="760" width="180" height="180" fill="#000000" />
         <rect x="880" y="780" width="140" height="140" fill="#FF00FF" />
 
-        <!-- Traffico Bianco (Sulla scorciatoia) -->
+        <!-- Traffico Bianco -->
         <g id="traffic-zone" visibility="hidden">
             <rect x="790" y="110" width="320" height="180" fill="#000000" />
             <rect x="810" y="130" width="280" height="140" fill="#FFFFFF" />
@@ -87,15 +75,9 @@
         function toggleFullScreen() {
             var fsBtn = document.getElementById('btn-fs');
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().then(() => {
-                    fsBtn.innerText = "ESCI DA FULL SCREEN";
-                });
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen().then(() => {
-                        fsBtn.innerText = "FULL SCREEN";
-                    });
-                }
+                document.documentElement.requestFullscreen().then(() => fsBtn.innerText = "ESCI DA FULL SCREEN");
+            } else if (document.exitFullscreen) {
+                document.exitFullscreen().then(() => fsBtn.innerText = "FULL SCREEN");
             }
         }
 
