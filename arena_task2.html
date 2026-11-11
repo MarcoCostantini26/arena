@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Task 2 - Contextual Bandit Arena</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #111; font-family: sans-serif; user-select: none; }
+        
+        #hud {
+            position: fixed; top: 15px; left: 50%; transform: translateX(-50%);
+            background: rgba(20, 20, 20, 0.9); color: #fff; padding: 10px 20px;
+            border-radius: 8px; border: 1px solid #444; z-index: 10;
+            display: flex; gap: 15px; align-items: center; font-size: 14px;
+            transition: all 0.3s ease;
+            transform-origin: top center;
+        }
+        
+        :fullscreen #hud {
+            transform: translateX(-50%) scale(0.65);
+            background: rgba(20, 20, 20, 0.6);
+            top: 5px;
+        }
+        
+        :-webkit-full-screen #hud {
+            transform: translateX(-50%) scale(0.65);
+            background: rgba(20, 20, 20, 0.6);
+            top: 5px;
+        }
+
+        button {
+            padding: 6px 12px; border: none; border-radius: 4px;
+            cursor: pointer; font-weight: bold; background: #3498db; color: white;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.9; }
+        
+        .status-dot { width: 12px; height: 12px; border-radius: 50%; background: red; display: inline-block; }
+    </style>
+</head>
+<body>
+
+<div id="hud">
+    <span>WS: <span id="ws-dot" class="status-dot"></span></span>
+    <input type="text" id="esp-ip" value="192.168.4.1" style="width:110px; padding:4px; border-radius:4px; border:none;">
+    <button onclick="connectWS()">Connetti ESP32</button>
+    <button onclick="toggleLightManual()" style="background:#f39c12;">Switch Luce</button>
+    <button onclick="invertSemantics()" style="background:#9b59b6;">Inverti Semantica</button>
+    <button id="fs-btn" onclick="toggleFullScreen()" style="background:#2c3e50;">Schermo Intero</button>
+    <span id="state-label">Stato: LUCE SPENTA</span>
+    <span id="timer-label">Timer Luce: --</span>
+    <span id="score-label" style="color:#2ecc71; font-weight:bold;">Prede: 0</span>
+</div>
+
+<svg id="arena" viewBox="0 0 1920 1080" width="100vw" height="100vh" preserveAspectRatio="none">
+    <rect x="0" y="0" width="1920" height="1080" fill="#FF0000" />
+    
+    <rect id="arena-bg" x="90" y="90" width="1740" height="900" fill="#000000" />
+
+    <g id="button-group" transform="translate(1450, 320)">
+        <circle id="btn-core" cx="0" cy="0" r="140" fill="#FFFF00" />
+    </g>
+
+    <g id="prey-group" visibility="hidden">
+        <circle id="prey-0" cx="500" cy="350" r="115" fill="#FF00FF" />
+        <circle id="prey-1" cx="650" cy="750" r="115" fill="#FF00FF" />
+        <circle id="prey-2" cx="1200" cy="720" r="115" fill="#FF00FF" />
+    </g>
+</svg>
+
+<script>
+    let ws = null;
+    let lightOn = false;
+    let whiteIsLightOn = true; 
+    let lightTimer = null;
+    let lightCountdown = 0;
+    const LIGHT_DURATION_SEC = 35; 
+    let preyScore = 0;
+
+    function updateArenaVisuals() {
+        const bg = document.getElementById('arena-bg');
+        const btnCore = document.getElementById('btn-core');
+        const preyGroup = document.getElementById('prey-group');
+        const stateLabel = document.getElementById('state-label');
+
+        let bgColor = "#000000";
+        if ((lightOn && whiteIsLightOn) || (!lightOn && !whiteIsLightOn)) {
+            bgColor = "#FFFFFF";
+        }
+        bg.setAttribute('fill', bgColor);
+
+        if (lightOn) {
+            preyGroup.setAttribute('visibility', 'visible');
+            btnCore.setAttribute('fill', bgColor); 
+            stateLabel.innerText = `Luce: ON (${bgColor === '#FFFFFF' ? 'Bianco' : 'Nero'})`;
+        } else {
+            preyGroup.setAttribute('visibility', 'hidden');
+            btnCore.setAttribute('fill', '#FFFF00');
+            stateLabel.innerText = `Luce: OFF (${bgColor === '#FFFFFF' ? 'Bianco' : 'Nero'})`;
+            document.getElementById('timer-label').innerText = "Timer Luce: --";
+        }
+    }
+
+    function turnLightOn() {
+        if (lightOn) return;
+        lightOn = true;
+        lightCountdown = LIGHT_DURATION_SEC;
+        updateArenaVisuals();
+
+        clearInterval(lightTimer);
+        lightTimer = setInterval(() => {
+            lightCountdown--;
+            document.getElementById('timer-label').innerText = `Timer Luce: ${lightCountdown}s`;
+            if (lightCountdown <= 0) {
+                clearInterval(lightTimer);
+                lightOn = false;
+                updateArenaVisuals();
+            }
+        }, 1000);
+    }
+
+    function toggleLightManual() {
+        if (lightOn) {
+            clearInterval(lightTimer);
+            lightOn = false;
+            updateArenaVisuals();
+        } else {
+            turnLightOn();
+        }
+    }
+
+    function invertSemantics() {
+        whiteIsLightOn = !whiteIsLightOn;
+        updateArenaVisuals();
+    }
+
+    function relocatePrey() {
+        preyScore++;
+        document.getElementById('score-label').innerText = `Prede: ${preyScore}`;
+        const coords = [
+            {x: 450 + Math.random()*300, y: 300 + Math.random()*200},
+            {x: 550 + Math.random()*350, y: 650 + Math.random()*200},
+            {x: 1100 + Math.random()*400, y: 600 + Math.random()*250}
+        ];
+        coords.forEach((c, idx) => {
+            const p = document.getElementById(`prey-${idx}`);
+            p.setAttribute('cx', c.x);
+            p.setAttribute('cy', c.y);
+        });
+    }
+
+    function connectWS() {
+        const ip = document.getElementById('esp-ip').value;
+        if (ws) ws.close();
+        ws = new WebSocket(`ws://${ip}:81/`);
+        
+        ws.onopen = () => { document.getElementById('ws-dot').style.background = '#2ecc71'; };
+        ws.onclose = () => { document.getElementById('ws-dot').style.background = 'red'; };
+        ws.onmessage = (event) => {
+            const msg = event.data;
+            console.log("ESP32 Event:", msg);
+            if (msg === "BUTTON_PRESSED") {
+                turnLightOn();
+            } else if (msg === "PREY_CAPTURED") {
+                if (lightOn) relocatePrey();
+            }
+        };
+    }
+
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.log(`Errore attivazione fullscreen: ${err.message}`);
+            });
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+        const btn = document.getElementById('fs-btn');
+        if (document.fullscreenElement) {
+            btn.innerText = "Esci da Schermo Intero";
+            btn.style.background = "#e74c3c";
+        } else {
+            btn.innerText = "Schermo Intero";
+            btn.style.background = "#2c3e50";
+        }
+    });
+
+    updateArenaVisuals();
+</script>
+</body>
+</html>
